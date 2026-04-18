@@ -5,7 +5,7 @@ public class NetworkUI : MonoBehaviour
 {
     void OnGUI()
     {
-        // ADD THIS LINE: If the Manager is gone (because we hit stop), abort drawing the UI!
+        // if the game stops and can't find the manager, this will prevent a null reference exception
         if (NetworkManager.Singleton == null) return;
 
         GUILayout.BeginArea(new Rect(10, 10, 300, 300));
