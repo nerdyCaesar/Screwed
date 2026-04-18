@@ -33,7 +33,7 @@ public class BasePlayer : NetworkBehaviour
     }
 
     // ── Update ────────────────────────────────────────────────
-    void Update()
+    protected virtual void Update()
     {
         // input — owner only
         if (IsOwner && !IsStunned.Value)
@@ -58,7 +58,7 @@ public class BasePlayer : NetworkBehaviour
         }
     }
 
-    void FixedUpdate()
+    protected virtual void FixedUpdate()
     {
         if (!IsOwner) return;
         if (IsStunned.Value) return;
@@ -67,7 +67,7 @@ public class BasePlayer : NetworkBehaviour
         Debug.Log($"Player position: {position}");
     }
 
-    // ── Slow (called by Saboteur coffee ability) ──────────────
+    // Slow (called by Saboteur coffee ability)
     public void ApplySlow(float amount, float duration)
     {
         if (!IsServer) return;
@@ -81,7 +81,7 @@ public class BasePlayer : NetworkBehaviour
         speed /= (1f - amount);
     }
 
-    // ── RPCs ──────────────────────────────────────────────────
+    // RPCs
     [Rpc(SendTo.Server)]
     public void ApplyStunServerRpc(float duration)
     {
