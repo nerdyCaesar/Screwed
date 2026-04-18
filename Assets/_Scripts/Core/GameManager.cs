@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+
+// will need to use a slide instead of a two sprite
 public enum MatchState { Waiting, Playing, Ended }
 
 public class GameManager : NetworkBehaviour
@@ -28,7 +30,7 @@ public class GameManager : NetworkBehaviour
 
     [Header("UI")]
     [SerializeField] TMP_Text timerLabel;
-    [SerializeField] Slider progressBar;
+    [SerializeField] UnityEngine.UI.Image progressBarFill;
 
     void Awake()
     {
@@ -43,7 +45,7 @@ public class GameManager : NetworkBehaviour
         State.OnValueChanged += OnStateChanged;
 
         UpdateTimerUI(TimeRemaining.Value);
-        progressBar.value = WorkerProgress.Value / 100f;
+        progressBarFill.fillAmount = WorkerProgress.Value / 100f;
 
         if (IsServer)
             State.Value = MatchState.Playing;
@@ -89,7 +91,7 @@ public class GameManager : NetworkBehaviour
     }
 
     void OnTimerChanged(float prev, float curr) => UpdateTimerUI(curr);
-    void OnProgressChanged(float prev, float curr) => progressBar.value = curr / 100f;
+    void OnProgressChanged(float prev, float curr) => progressBarFill.fillAmount = curr / 100f;
     void OnStateChanged(MatchState prev, MatchState curr)
     {
         if (curr == MatchState.Playing) Debug.Log("Match started!");
