@@ -28,6 +28,10 @@ public class BasePlayer : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        // register with server registry
+        if (IsServer)
+            PlayerRegistry.Instance.Register(OwnerClientId, this);
+
         if (!IsOwner) return;
         Debug.Log($"[BasePlayer] Spawned as: {Role.Value}");
     }

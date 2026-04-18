@@ -15,7 +15,7 @@ public class PlayerRegistry : MonoBehaviour
         else Destroy(gameObject);
     }
 
-    public override void OnEnable()
+    public void OnEnable()
     {
         NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
         NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
