@@ -74,6 +74,7 @@ public class Worker : BasePlayer
     {
         _shieldActive = active;
         // TODO: toggle shield VFX
+        // create some kind of "shield up" indicator on the player's UI when active
     }
 
     public bool TryAbsorbStun()
