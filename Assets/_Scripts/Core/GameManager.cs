@@ -57,9 +57,6 @@ public class GameManager : NetworkBehaviour
 
         TimeRemaining.Value -= Time.deltaTime;
 
-        // TEMP: fake progress to test bar fills — delete this after
-        AddProgress(2f * Time.deltaTime);
-
         if (TimeRemaining.Value <= 0)
         {
             TimeRemaining.Value = 0;
