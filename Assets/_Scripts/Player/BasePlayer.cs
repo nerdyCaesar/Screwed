@@ -25,21 +25,21 @@ public class BasePlayer : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
     private float _stunTimer = 0f;
+    private bool _shieldActive = false;
 
     public override void OnNetworkSpawn()
     {
         PlayerRegistry.Instance.Register(OwnerClientId, this);
-
         Role.OnValueChanged += OnRoleChanged;
 
         if (IsServer)
         {
-            PlayerRole role = OwnerClientId == 0 ? PlayerRole.Saboteur : PlayerRole.Worker;
+            int count = PlayerRegistry.Instance.GetAllPlayers().Count;
+            PlayerRole role = count % 2 == 0 ? PlayerRole.Saboteur : PlayerRole.Worker;
             Role.Value = role;
             Debug.Log($"[BasePlayer] Client {OwnerClientId} assigned {role}");
         }
 
-        // apply color immediately and after sync
         StartCoroutine(ApplyColorDelayed());
 
         if (!IsOwner) return;
@@ -58,18 +58,15 @@ public class BasePlayer : NetworkBehaviour
         Debug.Log($"YOU ARE A {Role.Value.ToString().ToUpper()}");
     }
 
-    void OnRoleChanged(PlayerRole prev, PlayerRole curr)
-    {
-        UpdateSprite(curr);
-    }
+    void OnRoleChanged(PlayerRole prev, PlayerRole curr) => UpdateSprite(curr);
 
     void UpdateSprite(PlayerRole role)
     {
         var sr = GetComponent<SpriteRenderer>();
         if (sr == null) return;
         sr.color = role == PlayerRole.Saboteur
-            ? new Color(0.94f, 0.33f, 0.31f)  // red
-            : new Color(0.31f, 0.76f, 0.97f); // blue
+            ? new Color(0.94f, 0.33f, 0.31f)
+            : new Color(0.31f, 0.76f, 0.97f);
     }
 
     protected virtual void Update()
@@ -82,20 +79,26 @@ public class BasePlayer : NetworkBehaviour
             if (Input.GetKeyDown(KeyCode.E))
             {
                 Debug.Log("[Player] E pressed");
-                Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 2f);
-                foreach (var hit in hits)
+                var t = FindFirstObjectByType<TattletaleTerminal>();
+                if (t != null && t.IsSpawned && !t.IsOccupied.Value)
                 {
-                    var terminal = hit.GetComponent<TattletaleTerminal>();
-                    if (terminal != null
-                        && terminal.gameObject.activeSelf
-                        && terminal.IsSpawned          // ← fix NullRef
-                        && !terminal.IsOccupied.Value)
+                    var sr = t.GetComponent<SpriteRenderer>();
+                    if (sr != null && sr.enabled)
                     {
-                        Debug.Log("[Player] Terminal found — sending interact");
-                        terminal.InteractServerRpc(NetworkManager.Singleton.LocalClientId);
-                        break;
+                        Debug.Log("[Player] Interacting with terminal");
+                        t.InteractServerRpc(NetworkManager.Singleton.LocalClientId);
                     }
+                    else Debug.Log("[Player] Terminal not visible yet");
                 }
+                else Debug.Log("[Player] No terminal or occupied");
+            }
+
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
+                if (Role.Value == PlayerRole.Saboteur)
+                    RouterUnplugServerRpc();
+                else
+                    ActivateShieldServerRpc();
             }
         }
         else if (IsOwner && IsStunned.Value)
@@ -121,6 +124,34 @@ public class BasePlayer : NetworkBehaviour
         rb.MovePosition(rb.position + movement * speed * Time.fixedDeltaTime);
     }
 
+    [Rpc(SendTo.Server)]
+    void RouterUnplugServerRpc()
+    {
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 4f);
+        foreach (var hit in hits)
+        {
+            var player = hit.GetComponent<BasePlayer>();
+            if (player == null || player.Role.Value != PlayerRole.Worker) continue;
+            player.ApplyStunServerRpc(5f);
+        }
+        GameManager.Instance.PauseProgress(5f);
+        Debug.Log("[Ability] Router Unplug!");
+    }
+
+    [Rpc(SendTo.Server)]
+    void ActivateShieldServerRpc()
+    {
+        _shieldActive = true;
+        StartCoroutine(ShieldCoroutine());
+        Debug.Log("[Ability] Shield active!");
+    }
+
+    IEnumerator ShieldCoroutine()
+    {
+        yield return new WaitForSeconds(5f);
+        _shieldActive = false;
+    }
+
     public void ApplySlow(float amount, float duration)
     {
         if (!IsServer) return;
@@ -138,6 +169,7 @@ public class BasePlayer : NetworkBehaviour
     public void ApplyStunServerRpc(float duration)
     {
         if (IsStunned.Value) return;
+        if (_shieldActive) { _shieldActive = false; return; }
         IsStunned.Value = true;
         _stunTimer = duration;
     }

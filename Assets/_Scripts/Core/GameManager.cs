@@ -13,6 +13,10 @@ public class GameManager : NetworkBehaviour
     public NetworkVariable<float> TimeRemaining = new(180f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<float> WorkerProgress = new(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     public NetworkVariable<MatchState> State = new(MatchState.Waiting, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<bool> TerminalVisible = new(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+
+    private float _progressPausedTimer = 0f;
+    public bool ProgressPaused => _progressPausedTimer > 0f;
 
     [Header("UI")]
     [SerializeField] TMP_Text timerLabel;
@@ -29,12 +33,24 @@ public class GameManager : NetworkBehaviour
         TimeRemaining.OnValueChanged += OnTimerChanged;
         WorkerProgress.OnValueChanged += OnProgressChanged;
         State.OnValueChanged += OnStateChanged;
+        TerminalVisible.OnValueChanged += OnTerminalVisibilityChanged;
 
         UpdateTimerUI(TimeRemaining.Value);
         progressBarFill.fillAmount = WorkerProgress.Value / 100f;
+        OnTerminalVisibilityChanged(false, TerminalVisible.Value);
 
         if (IsServer)
             State.Value = MatchState.Playing;
+    }
+
+    void OnTerminalVisibilityChanged(bool prev, bool curr)
+    {
+        if (terminal == null) return;
+        var sr = terminal.GetComponent<SpriteRenderer>();
+        var col = terminal.GetComponent<Collider2D>();
+        if (sr) sr.enabled = curr;
+        if (col) col.enabled = curr;
+        Debug.Log($"[Terminal] Visible: {curr}");
     }
 
     void Update()
@@ -43,11 +59,14 @@ public class GameManager : NetworkBehaviour
 
         TimeRemaining.Value -= Time.deltaTime;
 
+        if (_progressPausedTimer > 0f)
+            _progressPausedTimer -= Time.deltaTime;
+
         if (terminal != null)
         {
             bool shouldBeActive = TimeRemaining.Value < 120f && TimeRemaining.Value > 60f;
-            if (terminal.gameObject.activeSelf != shouldBeActive)
-                SetTerminalRpc(shouldBeActive);
+            if (TerminalVisible.Value != shouldBeActive)
+                TerminalVisible.Value = shouldBeActive;
         }
 
         if (TimeRemaining.Value <= 0)
@@ -57,16 +76,16 @@ public class GameManager : NetworkBehaviour
         }
     }
 
-    [Rpc(SendTo.Everyone)]
-    void SetTerminalRpc(bool active)
+    public void PauseProgress(float duration)
     {
-        if (terminal != null)
-            terminal.gameObject.SetActive(active);
+        if (!IsServer) return;
+        _progressPausedTimer = duration;
     }
 
     public void AddProgress(float amount)
     {
         if (!IsServer) return;
+        if (ProgressPaused) return;
         WorkerProgress.Value = Mathf.Clamp(WorkerProgress.Value + amount, 0f, 100f);
         if (WorkerProgress.Value >= 100f)
             EndMatch("Workers");
@@ -105,5 +124,6 @@ public class GameManager : NetworkBehaviour
         TimeRemaining.OnValueChanged -= OnTimerChanged;
         WorkerProgress.OnValueChanged -= OnProgressChanged;
         State.OnValueChanged -= OnStateChanged;
+        TerminalVisible.OnValueChanged -= OnTerminalVisibilityChanged;
     }
 }
