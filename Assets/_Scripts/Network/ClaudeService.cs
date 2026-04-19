@@ -22,21 +22,6 @@ public class ClaudeService : MonoBehaviour
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
-
-        // destroy if not host — API calls only from host
-        if (NetworkManager.Singleton != null &&
-            !NetworkManager.Singleton.IsHost)
-            Destroy(gameObject);
-    }
-    //TODO: delete the start method (only for testing)
-    void Start()
-    {
-        // TEMP TEST — delete after confirming
-        StartCoroutine(GetJudgeVerdict(
-            "Player 2 is breaking the router",
-            "Player 2 is at desk, progress 67%, not near router",
-            result => Debug.Log($"[Claude] Verdict: {result}")
-        ));
     }
 
     // ── Judge verdict ─────────────────────────────────────────

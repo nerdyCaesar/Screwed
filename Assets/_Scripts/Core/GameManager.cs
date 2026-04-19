@@ -8,24 +8,11 @@ public enum MatchState { Waiting, Playing, Ended }
 public class GameManager : NetworkBehaviour
 {
     public static GameManager Instance;
-
     [SerializeField] TattletaleTerminal terminal;
 
-    public NetworkVariable<float> TimeRemaining = new(
-        180f,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Server
-    );
-    public NetworkVariable<float> WorkerProgress = new(
-        0f,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Server
-    );
-    public NetworkVariable<MatchState> State = new(
-        MatchState.Waiting,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Server
-    );
+    public NetworkVariable<float> TimeRemaining = new(180f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<float> WorkerProgress = new(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    public NetworkVariable<MatchState> State = new(MatchState.Waiting, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     [Header("UI")]
     [SerializeField] TMP_Text timerLabel;
@@ -56,7 +43,6 @@ public class GameManager : NetworkBehaviour
 
         TimeRemaining.Value -= Time.deltaTime;
 
-        // terminal active between 2:00 and 1:00
         if (terminal != null)
         {
             bool shouldBeActive = TimeRemaining.Value < 120f && TimeRemaining.Value > 60f;

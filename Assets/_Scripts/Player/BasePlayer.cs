@@ -1,4 +1,3 @@
-
 using Unity.Netcode;
 using UnityEngine;
 
@@ -28,32 +27,30 @@ public class BasePlayer : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        // register with server registry
-        if (IsServer)
-            PlayerRegistry.Instance.Register(OwnerClientId, this);
+        // register on ALL instances, not just server
+        PlayerRegistry.Instance.Register(OwnerClientId, this);
 
         if (!IsOwner) return;
         Debug.Log($"[BasePlayer] Spawned as: {Role.Value}");
     }
 
-    // ── Update ────────────────────────────────────────────────
     protected virtual void Update()
     {
-        // input — owner only
         if (IsOwner && !IsStunned.Value)
         {
             movement.x = Input.GetAxisRaw("Horizontal");
             movement.y = Input.GetAxisRaw("Vertical");
 
-            // inside Update(), in the IsOwner block:
             if (Input.GetKeyDown(KeyCode.E))
             {
+                Debug.Log("[Player] E pressed");
                 Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 2f);
                 foreach (var hit in hits)
                 {
                     var terminal = hit.GetComponent<TattletaleTerminal>();
-                    if (terminal != null && terminal.IsVisible.Value && !terminal.IsOccupied.Value)
+                    if (terminal != null && terminal.gameObject.activeSelf && !terminal.IsOccupied.Value)
                     {
+                        Debug.Log("[Player] Terminal found — sending interact");
                         terminal.InteractServerRpc(NetworkManager.Singleton.LocalClientId);
                         break;
                     }
@@ -65,7 +62,6 @@ public class BasePlayer : NetworkBehaviour
             movement = Vector2.zero;
         }
 
-        // stun countdown — server only
         if (IsServer && IsStunned.Value)
         {
             _stunTimer -= Time.deltaTime;
@@ -84,7 +80,6 @@ public class BasePlayer : NetworkBehaviour
         rb.MovePosition(rb.position + movement * speed * Time.fixedDeltaTime);
     }
 
-    // Slow (called by Saboteur coffee ability)
     public void ApplySlow(float amount, float duration)
     {
         if (!IsServer) return;
@@ -98,7 +93,6 @@ public class BasePlayer : NetworkBehaviour
         speed /= (1f - amount);
     }
 
-    // RPCs
     [Rpc(SendTo.Server)]
     public void ApplyStunServerRpc(float duration)
     {

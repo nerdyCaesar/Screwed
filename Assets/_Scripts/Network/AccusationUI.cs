@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -12,6 +13,7 @@ public class AccusationUI : MonoBehaviour
     [SerializeField] GameObject panel;
     [SerializeField] TMP_InputField inputField;
     [SerializeField] Button submitButton;
+    [SerializeField] Button nextTargetButton;
     [SerializeField] TMP_Text timerLabel;
     [SerializeField] TMP_Text targetLabel;
     [SerializeField] TMP_Text deliberatingLabel;
@@ -21,10 +23,14 @@ public class AccusationUI : MonoBehaviour
     private bool _open;
     private ulong _accusedId;
 
+    private List<BasePlayer> _otherPlayers = new();
+    private int _targetIndex = 0;
+
     void Awake()
     {
         if (Instance == null) Instance = this;
         submitButton.onClick.AddListener(OnSubmit);
+        if (nextTargetButton) nextTargetButton.onClick.AddListener(CycleTarget);
         panel.SetActive(false);
         if (deliberatingLabel) deliberatingLabel.gameObject.SetActive(false);
     }
@@ -35,18 +41,40 @@ public class AccusationUI : MonoBehaviour
         _timeLeft = 10f;
         _open = true;
 
-        // find nearest other player to accuse
-        var local = NetworkManager.Singleton.LocalClientId;
-        var target = PlayerRegistry.Instance.GetNearestOtherPlayer(
-            NetworkManager.Singleton.SpawnManager
-                .GetLocalPlayerObject().transform.position, local);
+        // build list of other players
+        _otherPlayers.Clear();
+        ulong localId = NetworkManager.Singleton.LocalClientId;
+        foreach (var p in PlayerRegistry.Instance.GetAllPlayers())
+            if (p.OwnerClientId != localId)
+                _otherPlayers.Add(p);
 
-        _accusedId = target != null ? target.OwnerClientId : 0;
-        if (targetLabel) targetLabel.text = $"Accuse: Player {_accusedId}";
+        _targetIndex = 0;
+        UpdateTargetLabel();
 
         inputField.text = "";
         panel.SetActive(true);
         inputField.ActivateInputField();
+    }
+
+    public void CycleTarget()
+    {
+        if (_otherPlayers.Count == 0) return;
+        _targetIndex = (_targetIndex + 1) % _otherPlayers.Count;
+        UpdateTargetLabel();
+    }
+
+    void UpdateTargetLabel()
+    {
+        if (_otherPlayers.Count == 0)
+        {
+            if (targetLabel) targetLabel.text = "No other players found";
+            _accusedId = 0;
+            return;
+        }
+        var target = _otherPlayers[_targetIndex];
+        _accusedId = target.OwnerClientId;
+        if (targetLabel)
+            targetLabel.text = $"Accuse: Player {_accusedId} ({target.Role.Value})";
     }
 
     void Update()
@@ -67,19 +95,18 @@ public class AccusationUI : MonoBehaviour
 
         panel.SetActive(false);
 
-        // show deliberating message
         if (deliberatingLabel)
         {
             deliberatingLabel.gameObject.SetActive(true);
             deliberatingLabel.text = "Judge is deliberating...";
         }
 
-        _terminal.SubmitAccusationServerRpc(
-            _accusedId,
-            new FixedString512Bytes(text)
-        );
+        if (_accusedId != 0)
+            _terminal.SubmitAccusationServerRpc(
+                _accusedId,
+                new FixedString512Bytes(text)
+            );
 
-        // hide deliberating after 3s
         Invoke(nameof(HideDeliberating), 3f);
     }
 
