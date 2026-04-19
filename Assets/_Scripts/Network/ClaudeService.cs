@@ -24,7 +24,7 @@ public class ClaudeService : MonoBehaviour
         else Destroy(gameObject);
     }
 
-    // ── Judge verdict ─────────────────────────────────────────
+    // Ask Claude for a strict true/false ruling on an accusation.
     public IEnumerator GetJudgeVerdict(string accusation, string playerContext, Action<bool> onResult)
     {
         string prompt =
@@ -51,7 +51,7 @@ public class ClaudeService : MonoBehaviour
         }));
     }
 
-    // ── Stun roast ────────────────────────────────────────────
+    // Generate a short roast line for stun events.
     public IEnumerator GetStunRoast(string playerAction, Action<string> onResult)
     {
         string prompt =
@@ -61,7 +61,7 @@ public class ClaudeService : MonoBehaviour
         yield return StartCoroutine(CallClaude(prompt, 60, onResult));
     }
 
-    // ── Bug snippet for code review ───────────────────────────
+    // Generate a short buggy snippet used in the code review mini-event.
     public IEnumerator GetBugSnippet(Action<BugSnippet> onResult)
     {
         string prompt =
@@ -85,7 +85,7 @@ public class ClaudeService : MonoBehaviour
         }));
     }
 
-    // ── Core HTTP call ────────────────────────────────────────
+    // Shared HTTP call wrapper for Anthropic requests.
     private IEnumerator CallClaude(string prompt, int maxTokens, Action<string> onResult)
     {
         var body = JsonUtility.ToJson(new ClaudeRequest
@@ -116,7 +116,7 @@ public class ClaudeService : MonoBehaviour
         }
     }
 
-    // ── Fallback snippet if API fails ─────────────────────────
+    // Local fallback so gameplay still works when the API call fails.
     BugSnippet GetFallbackSnippet()
     {
         return new BugSnippet
@@ -136,7 +136,7 @@ public class ClaudeService : MonoBehaviour
         };
     }
 
-    // ── Serializable types ────────────────────────────────────
+    // Request and response DTOs for JsonUtility serialization.
     [Serializable] class ClaudeRequest { public string model; public int max_tokens; public Message[] messages; }
     [Serializable] class Message { public string role, content; }
     [Serializable] class ClaudeResponse { public ContentBlock[] content; }

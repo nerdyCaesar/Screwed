@@ -29,7 +29,7 @@ public class JudgeNPC : NetworkBehaviour
 
     void Update()
     {
-        // only host controls NPCs
+        // The server is authoritative for NPC behavior.
         if (!IsServer) return;
         if (_isDistracted) return;
 
@@ -41,7 +41,7 @@ public class JudgeNPC : NetworkBehaviour
         ScanForPlayers();
     }
 
-    // ── Patrol between waypoints ──────────────────────────────
+    // Move between waypoints in a loop while idle.
     void Patrol()
     {
         if (waypoints.Length == 0) return;
@@ -54,7 +54,7 @@ public class JudgeNPC : NetworkBehaviour
             _currentWaypoint = (_currentWaypoint + 1) % waypoints.Length;
     }
 
-    // ── Chase detected player ─────────────────────────────────
+    // Pursue the current target until they are stunned or lost.
     void ChasePlayer()
     {
         if (_chaseTarget == null || _chaseTarget.IsStunned.Value)
@@ -68,7 +68,7 @@ public class JudgeNPC : NetworkBehaviour
                        - _rb.position).normalized;
         _rb.MovePosition(_rb.position + dir * chaseSpeed * Time.fixedDeltaTime);
 
-        // close enough to stun
+        // Trigger stun once the judge is close enough.
         if (Vector2.Distance(transform.position,
                              _chaseTarget.transform.position) < 0.8f)
         {
@@ -78,7 +78,7 @@ public class JudgeNPC : NetworkBehaviour
         }
     }
 
-    // ── Scan nearby players ───────────────────────────────────
+    // Find an unstunned player in range and start chasing.
     void ScanForPlayers()
     {
         if (_isChasing) return;
@@ -92,29 +92,27 @@ public class JudgeNPC : NetworkBehaviour
             if (player == null) continue;
             if (player.IsStunned.Value) continue;
 
-            // detect any player within radius — no velocity check needed
+            // Any unstunned player in radius becomes a valid chase target.
             _isChasing = true;
             _chaseTarget = player;
-            Debug.Log($"[Judge] Detected player {player.OwnerClientId}");
             return;
         }
     }
-    // ── Stun the caught player ────────────────────────────────
+
+    // Apply stun on the server and notify clients for feedback UI.
     void StunTarget(BasePlayer player)
     {
         player.ApplyStunServerRpc(stunDuration);
         NotifyStunClientRpc(player.OwnerClientId);
-        Debug.Log($"[Judge] Stunned player {player.OwnerClientId}");
     }
 
     [Rpc(SendTo.Everyone)]
     void NotifyStunClientRpc(ulong clientId)
     {
-        Debug.Log($"[Judge] Player {clientId} got code reviewed!");
-        // TODO: hook to roast bubble + CodeReviewManager
+        // TODO: Show roast bubble and connect this event to CodeReviewManager.
     }
 
-    // ── Rubber duck distraction ───────────────────────────────
+    // Temporarily pause judge behavior while distracted.
     public void SetDistracted(float duration)
     {
         if (!IsServer) return;
@@ -126,13 +124,11 @@ public class JudgeNPC : NetworkBehaviour
         _isDistracted = true;
         _isChasing = false;
         _chaseTarget = null;
-        Debug.Log($"[Judge] Distracted for {duration}s");
         yield return new WaitForSeconds(duration);
         _isDistracted = false;
-        Debug.Log("[Judge] Back on duty");
     }
 
-    // ── Debug gizmo — see detection radius in scene view ─────
+    // Draw detection range in the editor when this NPC is selected.
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.red;

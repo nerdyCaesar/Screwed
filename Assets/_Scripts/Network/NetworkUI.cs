@@ -5,7 +5,7 @@ public class NetworkUI : MonoBehaviour
 {
     void OnGUI()
     {
-        // if the game stops and can't find the manager, this will prevent a null reference exception
+        // Guard against temporary teardown states where NetworkManager is unavailable.
         if (NetworkManager.Singleton == null) return;
 
         GUILayout.BeginArea(new Rect(10, 10, 300, 300));

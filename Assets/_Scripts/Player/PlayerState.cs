@@ -5,6 +5,7 @@ public class PlayerState : NetworkBehaviour
 {
     public void RecordAction(string action)
     {
-        Debug.Log($"[PlayerState] {action}");
+        // Placeholder for future analytics or telemetry hooks.
+        _ = action;
     }
 }

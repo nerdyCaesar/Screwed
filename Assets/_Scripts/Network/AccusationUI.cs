@@ -41,7 +41,7 @@ public class AccusationUI : MonoBehaviour
         _timeLeft = 10f;
         _open = true;
 
-        // build list of other players
+        // Build a target list that excludes the local player.
         _otherPlayers.Clear();
         ulong localId = NetworkManager.Singleton.LocalClientId;
         foreach (var p in PlayerRegistry.Instance.GetAllPlayers())

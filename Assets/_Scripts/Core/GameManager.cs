@@ -53,7 +53,6 @@ public class GameManager : NetworkBehaviour
         var col = terminal.GetComponent<Collider2D>();
         if (sr) sr.enabled = curr;
         if (col) col.enabled = curr;
-        Debug.Log($"[Terminal] Visible: {curr}");
     }
 
     void Update()
@@ -113,7 +112,7 @@ public class GameManager : NetworkBehaviour
     void OnProgressChanged(float prev, float curr) => progressBarFill.fillAmount = curr / 100f;
     void OnStateChanged(MatchState prev, MatchState curr)
     {
-        if (curr == MatchState.Playing) Debug.Log("Match started!");
+        // Hook for future state-change reactions on clients.
     }
 
     void UpdateTimerUI(float seconds)

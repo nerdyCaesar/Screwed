@@ -23,7 +23,6 @@ public class TattletaleTerminal : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        Debug.Log($"[Terminal] OnNetworkSpawn — IsServer:{IsServer}");
         IsOccupied.OnValueChanged += OnOccupiedChanged;
         if (interactPrompt) interactPrompt.SetActive(false);
     }
@@ -56,19 +55,17 @@ public class TattletaleTerminal : NetworkBehaviour
         _isProcessing = true;
         IsOccupied.Value = true;
         OccupantClientId.Value = callerClientId;
-        Debug.Log($"[Terminal] Locked by client {callerClientId}");
 
-        // tell everyone — the right client opens UI based on clientId
+        // Notify all clients; only the occupying player opens the accusation UI.
         NotifyInteractRpc(callerClientId);
     }
 
     [Rpc(SendTo.Everyone)]
     void NotifyInteractRpc(ulong clientId)
     {
-        // only the occupant opens the UI
+        // Only the local occupant should open the accusation panel.
         if (NetworkManager.Singleton.LocalClientId == clientId)
         {
-            Debug.Log("[Terminal] Opening AccusationUI");
             AccusationUI.Instance.Open(this);
         }
     }
@@ -114,7 +111,8 @@ public class TattletaleTerminal : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     void BroadcastVerdictRpc(bool guilty, FixedString128Bytes msg)
     {
-        Debug.Log($"[Terminal] Verdict: {msg}");
+        _ = guilty;
+        _ = msg;
     }
 
     void ResetTerminal()

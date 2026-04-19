@@ -9,7 +9,8 @@ public class Worker : BasePlayer
 
     protected override void Update()
     {
-        base.Update(); // handles movement + E + Q
+        // Reuse base movement and interaction input handling.
+        base.Update();
     }
 
     protected override void FixedUpdate()

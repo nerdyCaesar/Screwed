@@ -7,7 +7,7 @@ public class PlayerRegistry : MonoBehaviour
 {
     public static PlayerRegistry Instance;
 
-    // server-side lookup: clientId → player object
+    // Server-side lookup from client id to spawned player instance.
     private Dictionary<ulong, BasePlayer> _players = new();
 
     void Awake()
@@ -31,16 +31,14 @@ public class PlayerRegistry : MonoBehaviour
 
     void OnClientConnected(ulong clientId)
     {
-        Debug.Log($"[PlayerRegistry] Client connected: {clientId}");
-
-        // assign role based on clientId
-        // 0 = host = Saboteur, everyone else = Worker
+        // Assign role after the player object has finished spawning.
+        // Host (id 0) starts as Saboteur; everyone else starts as Worker.
         StartCoroutine(AssignRoleDelayed(clientId));
     }
 
     IEnumerator AssignRoleDelayed(ulong clientId)
     {
-        // wait a frame for player object to spawn
+        // Wait a couple of frames so the networked player object is ready.
         yield return null;
         yield return null;
 
@@ -49,16 +47,14 @@ public class PlayerRegistry : MonoBehaviour
 
         PlayerRole role = clientId == 0 ? PlayerRole.Saboteur : PlayerRole.Worker;
         player.SetRoleServerRpc(role);
-        Debug.Log($"[Registry] Client {clientId} → {role}");
     }
 
     void OnClientDisconnected(ulong clientId)
     {
         _players.Remove(clientId);
-        Debug.Log($"[PlayerRegistry] Client removed: {clientId}");
     }
 
-    // called by each player on spawn
+    // Called by each player during network spawn.
     public void Register(ulong clientId, BasePlayer player)
     {
         if (!_players.ContainsKey(clientId))

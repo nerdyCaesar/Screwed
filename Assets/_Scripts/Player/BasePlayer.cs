@@ -7,7 +7,8 @@ public enum PlayerRole { Worker, Saboteur }
 public class BasePlayer : NetworkBehaviour
 {
     private float _abilityCooldownTimer = 0f;
-    private const float ABILITY_COOLDOWN = 20f; // 20 seconds for both abilities
+    // Shared cooldown used by both Q abilities.
+    private const float ABILITY_COOLDOWN = 20f;
     [Header("Movement")]
     public float speed = 3f;
     public Rigidbody2D rb;
@@ -46,7 +47,6 @@ public class BasePlayer : NetworkBehaviour
             int count = PlayerRegistry.Instance.GetAllPlayers().Count;
             PlayerRole role = count % 2 == 0 ? PlayerRole.Saboteur : PlayerRole.Worker;
             Role.Value = role;
-            Debug.Log($"[BasePlayer] Client {OwnerClientId} assigned {role}");
         }
 
         StartCoroutine(ApplyColorDelayed());
@@ -64,7 +64,6 @@ public class BasePlayer : NetworkBehaviour
     IEnumerator ShowRoleSplash()
     {
         yield return new WaitForSeconds(0.5f);
-        Debug.Log($"YOU ARE A {Role.Value.ToString().ToUpper()}");
     }
 
     void OnRoleChanged(PlayerRole prev, PlayerRole curr) => UpdateSprite(curr);
@@ -94,22 +93,18 @@ public class BasePlayer : NetworkBehaviour
 
             if (Input.GetKeyDown(KeyCode.E))
             {
-                Debug.Log("[Player] E pressed");
                 var t = FindFirstObjectByType<TattletaleTerminal>();
                 if (t != null && t.IsSpawned && !t.IsOccupied.Value)
                 {
                     var sr = t.GetComponent<SpriteRenderer>();
                     if (sr != null && sr.enabled)
                     {
-                        Debug.Log("[Player] Interacting with terminal");
                         t.InteractServerRpc(NetworkManager.Singleton.LocalClientId);
                     }
-                    else Debug.Log("[Player] Terminal not visible yet");
                 }
-                else Debug.Log("[Player] No terminal or occupied");
             }
 
-            // cooldown countdown
+            // Tick cooldown while ability is unavailable.
             if (_abilityCooldownTimer > 0f)
                 _abilityCooldownTimer -= Time.deltaTime;
 
@@ -159,9 +154,8 @@ public class BasePlayer : NetworkBehaviour
             player.ApplyStunServerRpc(5f);
         }
         GameManager.Instance.PauseProgress(5f);
-        Debug.Log("[Ability] Router Unplug!");
-        ShakeRpc(); // bigger shake for router unplug
-        Debug.Log("[Ability] Router Unplug!");
+        // Use a stronger shake to emphasize a successful sabotage.
+        ShakeRpc();
     }
 
     [Rpc(SendTo.Server)]
@@ -170,7 +164,6 @@ public class BasePlayer : NetworkBehaviour
         _shieldActive = true;
         StartCoroutine(ShieldCoroutine());
         ShakeRpc();
-        Debug.Log("[Ability] Shield active!");
     }
 
     IEnumerator ShieldCoroutine()

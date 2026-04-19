@@ -36,7 +36,6 @@ public class Saboteur : BasePlayer
 
         GameManager.Instance.PauseProgress(routerUnplugDuration);
         SyncCooldownClientRpc(routerUnplugCooldown);
-        Debug.Log("[Saboteur] Router Unplug!");
     }
 
     [Rpc(SendTo.Owner)]
