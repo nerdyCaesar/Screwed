@@ -44,8 +44,7 @@ public class Saboteur : BasePlayer
     [Rpc(SendTo.Server)]
     void RouterUnplugServerRpc()
     {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(
-            transform.position, routerUnplugRadius);
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, routerUnplugRadius, Physics2D.AllLayers);
 
         foreach (var hit in hits)
         {

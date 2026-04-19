@@ -31,6 +31,24 @@ public class PlayerRegistry : MonoBehaviour
     void OnClientConnected(ulong clientId)
     {
         Debug.Log($"[PlayerRegistry] Client connected: {clientId}");
+
+        // assign role based on clientId
+        // 0 = host = Saboteur, everyone else = Worker
+        StartCoroutine(AssignRoleDelayed(clientId));
+    }
+
+    IEnumerator AssignRoleDelayed(ulong clientId)
+    {
+        // wait a frame for player object to spawn
+        yield return null;
+        yield return null;
+
+        var player = GetPlayer(clientId);
+        if (player == null) yield break;
+
+        PlayerRole role = clientId == 0 ? PlayerRole.Saboteur : PlayerRole.Worker;
+        player.SetRoleServerRpc(role);
+        Debug.Log($"[Registry] Client {clientId} → {role}");
     }
 
     void OnClientDisconnected(ulong clientId)
