@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using System.Collections;
 
 public enum PlayerRole { Worker, Saboteur }
 
@@ -27,11 +28,48 @@ public class BasePlayer : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        // register on ALL instances, not just server
         PlayerRegistry.Instance.Register(OwnerClientId, this);
 
+        Role.OnValueChanged += OnRoleChanged;
+
+        if (IsServer)
+        {
+            PlayerRole role = OwnerClientId == 0 ? PlayerRole.Saboteur : PlayerRole.Worker;
+            Role.Value = role;
+            Debug.Log($"[BasePlayer] Client {OwnerClientId} assigned {role}");
+        }
+
+        // apply color immediately and after sync
+        StartCoroutine(ApplyColorDelayed());
+
         if (!IsOwner) return;
-        Debug.Log($"[BasePlayer] Spawned as: {Role.Value}");
+        StartCoroutine(ShowRoleSplash());
+    }
+
+    IEnumerator ApplyColorDelayed()
+    {
+        yield return new WaitForSeconds(0.3f);
+        UpdateSprite(Role.Value);
+    }
+
+    IEnumerator ShowRoleSplash()
+    {
+        yield return new WaitForSeconds(0.5f);
+        Debug.Log($"YOU ARE A {Role.Value.ToString().ToUpper()}");
+    }
+
+    void OnRoleChanged(PlayerRole prev, PlayerRole curr)
+    {
+        UpdateSprite(curr);
+    }
+
+    void UpdateSprite(PlayerRole role)
+    {
+        var sr = GetComponent<SpriteRenderer>();
+        if (sr == null) return;
+        sr.color = role == PlayerRole.Saboteur
+            ? new Color(0.94f, 0.33f, 0.31f)  // red
+            : new Color(0.31f, 0.76f, 0.97f); // blue
     }
 
     protected virtual void Update()
@@ -48,7 +86,10 @@ public class BasePlayer : NetworkBehaviour
                 foreach (var hit in hits)
                 {
                     var terminal = hit.GetComponent<TattletaleTerminal>();
-                    if (terminal != null && terminal.gameObject.activeSelf && !terminal.IsOccupied.Value)
+                    if (terminal != null
+                        && terminal.gameObject.activeSelf
+                        && terminal.IsSpawned          // ← fix NullRef
+                        && !terminal.IsOccupied.Value)
                     {
                         Debug.Log("[Player] Terminal found — sending interact");
                         terminal.InteractServerRpc(NetworkManager.Singleton.LocalClientId);
@@ -86,7 +127,7 @@ public class BasePlayer : NetworkBehaviour
         StartCoroutine(SlowCoroutine(amount, duration));
     }
 
-    private System.Collections.IEnumerator SlowCoroutine(float amount, float duration)
+    private IEnumerator SlowCoroutine(float amount, float duration)
     {
         speed *= (1f - amount);
         yield return new WaitForSeconds(duration);
@@ -105,5 +146,10 @@ public class BasePlayer : NetworkBehaviour
     public void SetRoleServerRpc(PlayerRole role)
     {
         Role.Value = role;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        Role.OnValueChanged -= OnRoleChanged;
     }
 }
