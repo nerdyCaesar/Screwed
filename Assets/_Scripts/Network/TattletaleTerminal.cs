@@ -38,23 +38,25 @@ public class TattletaleTerminal : NetworkBehaviour
         IsVisible.OnValueChanged += OnVisibilityChanged;
         IsOccupied.OnValueChanged += OnOccupiedChanged;
 
-        // apply initial state
         if (visualRoot) visualRoot.SetActive(IsVisible.Value);
         if (interactPrompt) interactPrompt.SetActive(false);
 
         if (IsServer)
             _cycleRoutine = StartCoroutine(SpawnCycle());
+
         Debug.Log($"[Terminal] OnNetworkSpawn fired — IsServer: {IsServer}");
     }
-
     // ── Server: random spawn cycle ────────────────────────────
     IEnumerator SpawnCycle()
     {
         while (true)
         {
+            // wait random interval
             float wait = Random.Range(minSpawnInterval, maxSpawnInterval);
+            Debug.Log($"[Terminal] Next appearance in {wait:F1}s");
             yield return new WaitForSeconds(wait);
 
+            // make visible
             IsVisible.Value = true;
             Debug.Log("[Terminal] Appeared!");
 
@@ -63,7 +65,7 @@ public class TattletaleTerminal : NetworkBehaviour
             if (!IsOccupied.Value)
             {
                 ResetTerminal();
-                Debug.Log("[Terminal] Timed out — no one used it");
+                Debug.Log("[Terminal] Timed out");
             }
         }
     }

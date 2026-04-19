@@ -4,12 +4,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-
 // will need to use a slide instead of a two sprite
 public enum MatchState { Waiting, Playing, Ended }
 
+
 public class GameManager : NetworkBehaviour
 {
+    [SerializeField] GameObject terminalPrefab;
     public static GameManager Instance;
 
     public NetworkVariable<float> TimeRemaining = new(
@@ -48,21 +49,41 @@ public class GameManager : NetworkBehaviour
         progressBarFill.fillAmount = WorkerProgress.Value / 100f;
 
         if (IsServer)
-            State.Value = MatchState.Playing;
-    }
-
-    void Update()
-    {
-        if (!IsServer || State.Value != MatchState.Playing) return;
-
-        TimeRemaining.Value -= Time.deltaTime;
-
-        if (TimeRemaining.Value <= 0)
         {
-            TimeRemaining.Value = 0;
-            EndMatch("Saboteurs");
+            State.Value = MatchState.Playing;
+
+            if (terminalPrefab == null)
+            {
+                Debug.LogError("[GameManager] terminalPrefab is NULL!");
+                return;
+            }
+
+            Debug.Log("[GameManager] Spawning terminal...");
+            var t = Instantiate(terminalPrefab, Vector3.zero, Quaternion.identity);
+            var netObj = t.GetComponent<NetworkObject>();
+            if (netObj == null)
+                Debug.LogError("[GameManager] Terminal has no NetworkObject!");
+            else
+            {
+                netObj.Spawn();
+                Debug.Log("[GameManager] Terminal spawned!");
+            }
         }
+
     }
+
+        void Update()
+        {
+            if (!IsServer || State.Value != MatchState.Playing) return;
+
+            TimeRemaining.Value -= Time.deltaTime;
+
+            if (TimeRemaining.Value <= 0)
+            {
+                TimeRemaining.Value = 0;
+                EndMatch("Saboteurs");
+            }
+        }
 
     public void AddProgress(float amount)
     {

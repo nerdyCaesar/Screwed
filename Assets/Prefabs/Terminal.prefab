@@ -240,7 +240,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3297666632
+  GlobalObjectIdHash: 2132276546
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -266,8 +266,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  minSpawnInterval: 5
-  maxSpawnInterval: 10
+  minSpawnInterval: 3
+  maxSpawnInterval: 5
   activeWindow: 15
   visualRoot: {fileID: 9171172648070895197}
   interactPrompt: {fileID: 4801017662769860595}
