@@ -24,7 +24,7 @@ public class IntroDialogue : MonoBehaviour
     void Start()
     {
         panel.SetActive(true);
-        Time.timeScale = 0f;
+        // don't pause time — let networking run
         dialogueText.text = lines[0];
         continueButton.onClick.AddListener(NextLine);
     }
@@ -35,8 +35,7 @@ public class IntroDialogue : MonoBehaviour
         if (_index >= lines.Length)
         {
             panel.SetActive(false);
-            Time.timeScale = 1f;
-            return;
+            return; // just close panel, no timeScale
         }
         dialogueText.text = lines[_index];
     }
