@@ -4,6 +4,7 @@ using TMPro;
 public class IntroDialogue : MonoBehaviour
 {
     [SerializeField] TMP_Text dialogueText;
+    [SerializeField] GameObject catherine;
 
     string[] lines = {
         "Hey! I'm Cath, your friendly neighborhood HackPrinceton guide.",
@@ -30,6 +31,7 @@ public class IntroDialogue : MonoBehaviour
             if (_index >= lines.Length)
             {
                 gameObject.SetActive(false);
+                if (catherine != null) catherine.SetActive(false);
                 return;
             }
             dialogueText.text = lines[_index];
