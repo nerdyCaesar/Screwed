@@ -10,7 +10,7 @@ public class ClaudeService : MonoBehaviour
     public static ClaudeService Instance;
 
     private const string API_URL = "https://api.anthropic.com/v1/messages";
-    private const string API_KEY = "YOUR_KEY_HERE";
+    private const string API_KEY = "fuckkkkkk";
     private const string MODEL = "claude-haiku-4-5-20251001";
 
     void Awake()
