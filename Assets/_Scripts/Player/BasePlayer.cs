@@ -6,6 +6,8 @@ public enum PlayerRole { Worker, Saboteur }
 
 public class BasePlayer : NetworkBehaviour
 {
+    private float _abilityCooldownTimer = 0f;
+    private const float ABILITY_COOLDOWN = 20f; // 20 seconds for both abilities
     [Header("Movement")]
     public float speed = 3f;
     public Rigidbody2D rb;
@@ -76,6 +78,13 @@ public class BasePlayer : NetworkBehaviour
             : new Color(0.31f, 0.76f, 0.97f);
     }
 
+    [Rpc(SendTo.Everyone)]
+    void ShakeRpc()
+    {
+        if (ScreenShake.Instance != null)
+            ScreenShake.Instance.Shake();
+    }
+
     protected virtual void Update()
     {
         if (IsOwner && !IsStunned.Value)
@@ -100,13 +109,21 @@ public class BasePlayer : NetworkBehaviour
                 else Debug.Log("[Player] No terminal or occupied");
             }
 
-            if (Input.GetKeyDown(KeyCode.Q))
+            // cooldown countdown
+            if (_abilityCooldownTimer > 0f)
+                _abilityCooldownTimer -= Time.deltaTime;
+
+            if (Input.GetKeyDown(KeyCode.Q) && _abilityCooldownTimer <= 0f)
             {
                 if (Role.Value == PlayerRole.Saboteur)
                     RouterUnplugServerRpc();
                 else
                     ActivateShieldServerRpc();
+
+                _abilityCooldownTimer = ABILITY_COOLDOWN;
             }
+
+
         }
         else if (IsOwner && IsStunned.Value)
         {
@@ -143,6 +160,8 @@ public class BasePlayer : NetworkBehaviour
         }
         GameManager.Instance.PauseProgress(5f);
         Debug.Log("[Ability] Router Unplug!");
+        ShakeRpc(); // bigger shake for router unplug
+        Debug.Log("[Ability] Router Unplug!");
     }
 
     [Rpc(SendTo.Server)]
@@ -150,6 +169,7 @@ public class BasePlayer : NetworkBehaviour
     {
         _shieldActive = true;
         StartCoroutine(ShieldCoroutine());
+        ShakeRpc();
         Debug.Log("[Ability] Shield active!");
     }
 

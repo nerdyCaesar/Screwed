@@ -7,6 +7,9 @@ public enum MatchState { Waiting, Playing, Ended }
 
 public class GameManager : NetworkBehaviour
 {
+
+    [SerializeField] GameObject endPanel;
+    [SerializeField] TMP_Text winnerText;
     public static GameManager Instance;
     [SerializeField] TattletaleTerminal terminal;
 
@@ -101,7 +104,9 @@ public class GameManager : NetworkBehaviour
     [Rpc(SendTo.Everyone)]
     void ShowEndScreenRpc(FixedString32Bytes winner)
     {
-        Debug.Log($"{winner} WIN!");
+        endPanel.SetActive(true);
+        winnerText.text = $"{winner} WIN!";
+        Time.timeScale = 0f;
     }
 
     void OnTimerChanged(float prev, float curr) => UpdateTimerUI(curr);
