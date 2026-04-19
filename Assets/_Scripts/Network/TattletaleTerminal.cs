@@ -33,30 +33,19 @@ public class TattletaleTerminal : NetworkBehaviour
 
     private Coroutine _cycleRoutine;
 
-    public override void OnNetworkSpawn()
-    {
-        IsVisible.OnValueChanged += OnVisibilityChanged;
-        IsOccupied.OnValueChanged += OnOccupiedChanged;
-
-        if (visualRoot) visualRoot.SetActive(IsVisible.Value);
-        if (interactPrompt) interactPrompt.SetActive(false);
-
-        if (IsServer)
-            _cycleRoutine = StartCoroutine(SpawnCycle());
-
-        Debug.Log($"[Terminal] OnNetworkSpawn fired — IsServer: {IsServer}");
-    }
-    // ── Server: random spawn cycle ────────────────────────────
     IEnumerator SpawnCycle()
     {
+        // start hidden
+        gameObject.SetActive(false);
+
         while (true)
         {
-            // wait random interval
             float wait = Random.Range(minSpawnInterval, maxSpawnInterval);
-            Debug.Log($"[Terminal] Next appearance in {wait:F1}s");
+            Debug.Log($"[Terminal] Appearing in {wait:F1}s");
             yield return new WaitForSeconds(wait);
 
-            // make visible
+            // appear
+            gameObject.SetActive(true);
             IsVisible.Value = true;
             Debug.Log("[Terminal] Appeared!");
 
@@ -64,14 +53,23 @@ public class TattletaleTerminal : NetworkBehaviour
 
             if (!IsOccupied.Value)
             {
-                ResetTerminal();
+                gameObject.SetActive(false);
+                IsVisible.Value = false;
                 Debug.Log("[Terminal] Timed out");
             }
         }
     }
 
+    void OnVisibilityChanged(bool prev, bool curr)
+    {
+        gameObject.SetActive(curr);
+        if (!curr && interactPrompt) interactPrompt.SetActive(false);
+        if (curr) Debug.Log("[Terminal] Visible to all clients");
+    }
+
     void ResetTerminal()
     {
+        gameObject.SetActive(false);
         IsVisible.Value = false;
         IsOccupied.Value = false;
         OccupantClientId.Value = ulong.MaxValue;
@@ -145,12 +143,6 @@ public class TattletaleTerminal : NetworkBehaviour
     }
 
     // ── Client: react to NetworkVariable changes ──────────────
-    void OnVisibilityChanged(bool prev, bool curr)
-    {
-        if (visualRoot) visualRoot.SetActive(curr);
-        if (!curr && interactPrompt) interactPrompt.SetActive(false);
-        if (curr) Debug.Log("[Terminal] Visible to all clients");
-    }
 
     void OnOccupiedChanged(bool prev, bool curr)
     {

@@ -1,17 +1,15 @@
 using Unity.Netcode;
 using Unity.Collections;
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
 
-// will need to use a slide instead of a two sprite
 public enum MatchState { Waiting, Playing, Ended }
-
 
 public class GameManager : NetworkBehaviour
 {
-    [SerializeField] GameObject terminalPrefab;
     public static GameManager Instance;
+
+    [SerializeField] TattletaleTerminal terminal;
 
     public NetworkVariable<float> TimeRemaining = new(
         180f,
@@ -49,41 +47,36 @@ public class GameManager : NetworkBehaviour
         progressBarFill.fillAmount = WorkerProgress.Value / 100f;
 
         if (IsServer)
-        {
             State.Value = MatchState.Playing;
-
-            if (terminalPrefab == null)
-            {
-                Debug.LogError("[GameManager] terminalPrefab is NULL!");
-                return;
-            }
-
-            Debug.Log("[GameManager] Spawning terminal...");
-            var t = Instantiate(terminalPrefab, Vector3.zero, Quaternion.identity);
-            var netObj = t.GetComponent<NetworkObject>();
-            if (netObj == null)
-                Debug.LogError("[GameManager] Terminal has no NetworkObject!");
-            else
-            {
-                netObj.Spawn();
-                Debug.Log("[GameManager] Terminal spawned!");
-            }
-        }
-
     }
 
-        void Update()
+    void Update()
+    {
+        if (!IsServer || State.Value != MatchState.Playing) return;
+
+        TimeRemaining.Value -= Time.deltaTime;
+
+        // terminal active between 2:00 and 1:00
+        if (terminal != null)
         {
-            if (!IsServer || State.Value != MatchState.Playing) return;
-
-            TimeRemaining.Value -= Time.deltaTime;
-
-            if (TimeRemaining.Value <= 0)
-            {
-                TimeRemaining.Value = 0;
-                EndMatch("Saboteurs");
-            }
+            bool shouldBeActive = TimeRemaining.Value < 120f && TimeRemaining.Value > 60f;
+            if (terminal.gameObject.activeSelf != shouldBeActive)
+                SetTerminalRpc(shouldBeActive);
         }
+
+        if (TimeRemaining.Value <= 0)
+        {
+            TimeRemaining.Value = 0;
+            EndMatch("Saboteurs");
+        }
+    }
+
+    [Rpc(SendTo.Everyone)]
+    void SetTerminalRpc(bool active)
+    {
+        if (terminal != null)
+            terminal.gameObject.SetActive(active);
+    }
 
     public void AddProgress(float amount)
     {
@@ -97,15 +90,13 @@ public class GameManager : NetworkBehaviour
     {
         if (State.Value == MatchState.Ended) return;
         State.Value = MatchState.Ended;
-        ShowEndScreenRpc(winningSide); // ← fixed name
+        ShowEndScreenRpc(winningSide);
     }
 
-    // ← fixed: no ClientRpc suffix with new [Rpc] attribute
     [Rpc(SendTo.Everyone)]
     void ShowEndScreenRpc(FixedString32Bytes winner)
     {
         Debug.Log($"{winner} WIN!");
-        // EndScreenUI.Instance.Show(winner.ToString());
     }
 
     void OnTimerChanged(float prev, float curr) => UpdateTimerUI(curr);
