@@ -25,8 +25,15 @@ public class BasePlayer : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
     private float _stunTimer = 0f;
-    private bool _shieldActive = false;
+    protected bool _shieldActive = false;
 
+
+    public bool TryAbsorbStun()
+    {
+        if (!_shieldActive) return false;
+        _shieldActive = false;
+        return true;
+    }
     public override void OnNetworkSpawn()
     {
         PlayerRegistry.Instance.Register(OwnerClientId, this);

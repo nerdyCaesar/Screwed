@@ -30,11 +30,7 @@ public class Saboteur : BasePlayer
         {
             var worker = hit.GetComponent<Worker>();
             if (worker == null) continue;
-            if (worker._shieldActive)
-            {
-                worker._shieldActive = false;
-                continue;
-            }
+            if (worker.TryAbsorbStun()) continue;
             worker.ApplyStunServerRpc(routerUnplugDuration);
         }
 
