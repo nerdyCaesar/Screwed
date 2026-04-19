@@ -67,8 +67,6 @@ public class BasePlayer : NetworkBehaviour
         if (!IsOwner) return;
         if (IsStunned.Value) return;
         rb.MovePosition(rb.position + movement * speed * Time.fixedDeltaTime);
-        Vector3 position = GameObject.FindGameObjectWithTag("Player").transform.position;
-        Debug.Log($"Player position: {position}");
     }
 
     // Slow (called by Saboteur coffee ability)
