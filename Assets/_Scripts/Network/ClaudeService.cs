@@ -28,7 +28,7 @@ public class ClaudeService : MonoBehaviour
             !NetworkManager.Singleton.IsHost)
             Destroy(gameObject);
     }
-
+    //TODO: delete the start method (only for testing)
     void Start()
     {
         // TEMP TEST — delete after confirming

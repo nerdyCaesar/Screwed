@@ -44,6 +44,21 @@ public class BasePlayer : NetworkBehaviour
         {
             movement.x = Input.GetAxisRaw("Horizontal");
             movement.y = Input.GetAxisRaw("Vertical");
+
+            // inside Update(), in the IsOwner block:
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, 2f);
+                foreach (var hit in hits)
+                {
+                    var terminal = hit.GetComponent<TattletaleTerminal>();
+                    if (terminal != null && terminal.IsVisible.Value && !terminal.IsOccupied.Value)
+                    {
+                        terminal.InteractServerRpc(NetworkManager.Singleton.LocalClientId);
+                        break;
+                    }
+                }
+            }
         }
         else if (IsOwner && IsStunned.Value)
         {
