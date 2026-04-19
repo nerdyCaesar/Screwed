@@ -10,8 +10,13 @@ public class ClaudeService : MonoBehaviour
     public static ClaudeService Instance;
 
     private const string API_URL = "https://api.anthropic.com/v1/messages";
-    private const string API_KEY = "fuckkkkkk";
     private const string MODEL = "claude-haiku-4-5-20251001";
+
+    private string GetApiKey()
+    {
+        TextAsset keyFile = Resources.Load<TextAsset>("APIConfig");
+        return keyFile != null ? keyFile.text.Trim() : "";
+    }
 
     void Awake()
     {
@@ -109,7 +114,7 @@ public class ClaudeService : MonoBehaviour
         req.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(body));
         req.downloadHandler = new DownloadHandlerBuffer();
         req.SetRequestHeader("Content-Type", "application/json");
-        req.SetRequestHeader("x-api-key", API_KEY);
+        req.SetRequestHeader("x-api-key", GetApiKey());
         req.SetRequestHeader("anthropic-version", "2023-06-01");
 
         yield return req.SendWebRequest();
