@@ -27,6 +27,7 @@ public class ClaudeService : MonoBehaviour
     // Ask Claude for a strict true/false ruling on an accusation.
     public IEnumerator GetJudgeVerdict(string accusation, string playerContext, Action<bool> onResult)
     {
+        Debug.Log($"[ClaudeService] GetJudgeVerdict called with accusation: '{accusation}'");
         string prompt =
             "You are a strict hackathon judge. Evaluate this accusation against " +
             "the accused player's actual game state. Be sceptical of dramatic claims. " +
@@ -39,13 +40,15 @@ public class ClaudeService : MonoBehaviour
         {
             try
             {
+                Debug.Log($"[ClaudeService] Raw Claude response: {raw}");
                 raw = raw.Replace("```json", "").Replace("```", "").Trim();
                 var verdict = JsonUtility.FromJson<VerdictResponse>(raw);
+                Debug.Log($"[ClaudeService] Parsed verdict: guilty={verdict.guilty}");
                 onResult(verdict.guilty);
             }
-            catch
+            catch (System.Exception ex)
             {
-                Debug.LogWarning("[Claude] Bad JSON: " + raw);
+                Debug.LogWarning($"[ClaudeService] Bad JSON parse: {raw}. Error: {ex.Message}");
                 onResult(false);
             }
         }));
@@ -88,6 +91,7 @@ public class ClaudeService : MonoBehaviour
     // Shared HTTP call wrapper for Anthropic requests.
     private IEnumerator CallClaude(string prompt, int maxTokens, Action<string> onResult)
     {
+        Debug.Log($"[ClaudeService] CallClaude initiated. Max tokens: {maxTokens}");
         var body = JsonUtility.ToJson(new ClaudeRequest
         {
             model = MODEL,
@@ -106,12 +110,13 @@ public class ClaudeService : MonoBehaviour
 
         if (req.result == UnityWebRequest.Result.Success)
         {
+            Debug.Log($"[ClaudeService] API call succeeded.");
             var resp = JsonUtility.FromJson<ClaudeResponse>(req.downloadHandler.text);
             onResult(resp.content[0].text.Trim());
         }
         else
         {
-            Debug.LogError("[Claude] API error: " + req.error);
+            Debug.LogError($"[ClaudeService] API error: {req.error}");
             onResult("{\"guilty\": false}");
         }
     }

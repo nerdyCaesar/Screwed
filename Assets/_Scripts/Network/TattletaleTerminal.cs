@@ -1,4 +1,4 @@
-using System.Collections;
+
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -74,13 +74,19 @@ public class TattletaleTerminal : NetworkBehaviour
     public void SubmitAccusationServerRpc(ulong accusedClientId,
                                           FixedString512Bytes accusationText)
     {
-        if (OccupantClientId.Value == ulong.MaxValue) return;
+        Debug.Log($"[TattleTaleTerminal] SubmitAccusationServerRpc called. Text: {accusationText}");
+        if (OccupantClientId.Value == ulong.MaxValue)
+        {
+            Debug.LogWarning("[TattleTaleTerminal] No occupant, rejecting accusation.");
+            return;
+        }
         ulong accuserId = OccupantClientId.Value;
 
         BasePlayer accused = PlayerRegistry.Instance.GetPlayer(accusedClientId);
         string context = accused != null
             ? $"Accused: Player {accusedClientId}. Role: {accused.Role.Value}. Stunned: {accused.IsStunned.Value}."
             : $"Accused: Player {accusedClientId}. State unknown.";
+        Debug.Log($"[TattleTaleTerminal] Received accusation from Player {accuserId} against Player {accusedClientId}. Context: {context}");
 
         StartCoroutine(GetVerdict(accuserId, accusedClientId,
                                   accusationText.ToString(), context));
@@ -89,11 +95,17 @@ public class TattletaleTerminal : NetworkBehaviour
     IEnumerator GetVerdict(ulong accuserId, ulong accusedId,
                            string accusation, string context)
     {
+        Debug.Log($"[TattleTaleTerminal] GetVerdict started. Accusation: '{accusation}'");
         bool guilty = false;
         yield return StartCoroutine(
             ClaudeService.Instance.GetJudgeVerdict(accusation, context,
-                result => guilty = result));
+                result =>
+                {
+                    guilty = result;
+                    Debug.Log($"[TattleTaleTerminal] Claude verdict callback: guilty={guilty}");
+                }));
 
+        Debug.Log($"[TattleTaleTerminal] Verdict processed. Guilty: {guilty}");
         string msg = guilty
             ? $"GUILTY — Player {accusedId} stunned!"
             : $"BACKFIRE — Player {accuserId} stunned!";

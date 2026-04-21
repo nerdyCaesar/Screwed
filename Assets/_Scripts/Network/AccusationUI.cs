@@ -4,6 +4,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Diagnostics;
 
 public class AccusationUI : MonoBehaviour
 {
@@ -29,14 +30,22 @@ public class AccusationUI : MonoBehaviour
     void Awake()
     {
         if (Instance == null) Instance = this;
-        submitButton.onClick.AddListener(OnSubmit);
-        if (nextTargetButton) nextTargetButton.onClick.AddListener(CycleTarget);
-        panel.SetActive(false);
-        if (deliberatingLabel) deliberatingLabel.gameObject.SetActive(false);
+
+        // Setup button listeners with null safety.
+        if (submitButton != null)
+            submitButton.onClick.AddListener(OnSubmit);
+        if (nextTargetButton != null)
+            nextTargetButton.onClick.AddListener(CycleTarget);
+
+        if (panel != null) panel.SetActive(false);
+        if (deliberatingLabel != null) deliberatingLabel.gameObject.SetActive(false);
     }
 
     public void Open(TattletaleTerminal terminal)
     {
+        if (panel == null) return;
+        if (inputField == null) return;
+
         _terminal = terminal;
         _timeLeft = 10f;
         _open = true;
@@ -81,7 +90,7 @@ public class AccusationUI : MonoBehaviour
     {
         if (!_open) return;
         _timeLeft -= Time.deltaTime;
-        if (timerLabel) timerLabel.text = $"{Mathf.CeilToInt(_timeLeft)}s";
+        if (timerLabel != null) timerLabel.text = $"{Mathf.CeilToInt(_timeLeft)}s";
         if (_timeLeft <= 0) OnSubmit();
     }
 
@@ -90,18 +99,24 @@ public class AccusationUI : MonoBehaviour
         if (!_open) return;
         _open = false;
 
-        string text = inputField.text.Trim();
+        string text = "";
+        if (inputField != null)
+            text = inputField.text.Trim();
         if (string.IsNullOrEmpty(text)) text = "They looked suspicious.";
 
-        panel.SetActive(false);
+        Debug.Log($"[AccusationUI] Submit pressed. Accusation: '{text}' against Player {_accusedId}");
 
-        if (deliberatingLabel)
+        if (panel != null)
+            panel.SetActive(false);
+
+        if (deliberatingLabel != null)
         {
             deliberatingLabel.gameObject.SetActive(true);
             deliberatingLabel.text = "Judge is deliberating...";
+            Debug.Log($"[Accusation] Accuser: {NetworkManager.Singleton.LocalClientId}, Accused: {_accusedId}, Text: {text}");
         }
 
-        if (_accusedId != 0)
+        if (_accusedId != 0 && _terminal != null)
             _terminal.SubmitAccusationServerRpc(
                 _accusedId,
                 new FixedString512Bytes(text)
@@ -112,7 +127,7 @@ public class AccusationUI : MonoBehaviour
 
     void HideDeliberating()
     {
-        if (deliberatingLabel)
+        if (deliberatingLabel != null)
             deliberatingLabel.gameObject.SetActive(false);
     }
 
