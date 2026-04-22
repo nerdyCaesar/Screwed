@@ -1,30 +1,35 @@
 using Unity.Netcode;
+using Unity.Netcode.Transports.UTP;
 using UnityEngine;
+using TMPro;
 
 public class NetworkUI : MonoBehaviour
 {
-    void OnGUI()
+    [SerializeField] TMP_InputField ipInputField;
+    [SerializeField] TMP_Text statusText;
+
+    void Start()
     {
-        // Guard against temporary teardown states where NetworkManager is unavailable.
-        if (NetworkManager.Singleton == null) return;
+        // default IP for local testing
+        ipInputField.text = "127.0.0.1";
+    }
 
-        GUILayout.BeginArea(new Rect(10, 10, 300, 300));
+    public void StartHost()
+    {
+        var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+        transport.SetConnectionData("0.0.0.0", 7777);
+        NetworkManager.Singleton.StartHost();
+        if (statusText) statusText.text = "Hosting on port 7777...";
+    }
 
-        if (!NetworkManager.Singleton.IsClient && !NetworkManager.Singleton.IsServer)
-        {
-            if (GUILayout.Button("Start Host (Me)", GUILayout.Width(200), GUILayout.Height(50)))
-            {
-                NetworkManager.Singleton.StartHost();
-            }
+    public void StartClient()
+    {
+        string ip = ipInputField.text.Trim();
+        if (string.IsNullOrEmpty(ip)) ip = "127.0.0.1";
 
-            GUILayout.Space(10);
-
-            if (GUILayout.Button("Start Client (Friend)", GUILayout.Width(200), GUILayout.Height(50)))
-            {
-                NetworkManager.Singleton.StartClient();
-            }
-        }
-
-        GUILayout.EndArea();
+        var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+        transport.SetConnectionData(ip, 7777);
+        NetworkManager.Singleton.StartClient();
+        if (statusText) statusText.text = $"Connecting to {ip}...";
     }
 }
