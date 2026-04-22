@@ -4,7 +4,6 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using System.Diagnostics;
 
 public class AccusationUI : MonoBehaviour
 {

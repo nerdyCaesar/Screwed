@@ -20,6 +20,18 @@ public class NetworkUI : MonoBehaviour
             return;
         }
 
+        if (hostButton != null)
+        {
+            hostButton.onClick.RemoveListener(StartHost);
+            hostButton.onClick.AddListener(StartHost);
+        }
+
+        if (joinButton != null)
+        {
+            joinButton.onClick.RemoveListener(StartClient);
+            joinButton.onClick.AddListener(StartClient);
+        }
+
         ipInputField.text = "";
         ipInputField.placeholder.GetComponent<TMP_Text>().text
             = "Enter ngrok address (e.g. 0.tcp.ngrok.io:12345)";

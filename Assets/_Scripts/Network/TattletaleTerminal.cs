@@ -2,6 +2,7 @@
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using System.Collections;
 
 public class TattletaleTerminal : NetworkBehaviour
 {
@@ -92,8 +93,7 @@ public class TattletaleTerminal : NetworkBehaviour
                                   accusationText.ToString(), context));
     }
 
-    IEnumerator GetVerdict(ulong accuserId, ulong accusedId,
-                           string accusation, string context)
+    IEnumerator GetVerdict(ulong accuserId, ulong accusedId, string accusation, string context)
     {
         Debug.Log($"[TattleTaleTerminal] GetVerdict started. Accusation: '{accusation}'");
         bool guilty = false;
