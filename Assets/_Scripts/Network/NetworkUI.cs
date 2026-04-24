@@ -14,6 +14,15 @@ public class NetworkUI : MonoBehaviour
 
     void Start()
     {
+
+        Debug.Log("[NetworkUI] Start called");
+        Debug.Log($"[NetworkUI] hostButton: {hostButton}");
+        Debug.Log($"[NetworkUI] joinButton: {joinButton}");
+
+        if (hostButton != null)
+            hostButton.onClick.AddListener(() => Debug.Log("[NetworkUI] Host clicked!"));
+        if (joinButton != null)
+            joinButton.onClick.AddListener(() => Debug.Log("[NetworkUI] Join clicked!"));
         if (ipInputField == null)
         {
             Debug.LogError("[NetworkUI] ipInputField is not assigned in the inspector!");
