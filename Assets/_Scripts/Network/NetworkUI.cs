@@ -107,4 +107,18 @@ public class NetworkUI : MonoBehaviour
         if (joinButton) joinButton.interactable = false;
         networkPanel.SetActive(false);
     }
+
+    void OnGUI()
+    {
+        if (GUI.Button(new Rect(10, 10, 150, 50), "HOST"))
+        {
+            Debug.Log("[NetworkUI] OnGUI Host clicked!");
+            StartHost();
+        }
+        if (GUI.Button(new Rect(10, 70, 150, 50), "JOIN"))
+        {
+            Debug.Log("[NetworkUI] OnGUI Join clicked!");
+            StartClient();
+        }
+    }
 }
